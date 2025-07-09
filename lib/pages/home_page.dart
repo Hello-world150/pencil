@@ -92,10 +92,6 @@ class _HomePageState extends State<HomePage> {
       minLines: AppConstants.defaultTextFieldLines,
       decoration: const InputDecoration(
         hintText: AppConstants.thoughtHint,
-        border: OutlineInputBorder(),
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding: EdgeInsets.all(AppConstants.defaultPadding),
       ),
     );
   }
@@ -109,8 +105,6 @@ class _HomePageState extends State<HomePage> {
           decoration: const InputDecoration(
             labelText: AppConstants.tagLabel,
             hintText: AppConstants.tagHint,
-            border: OutlineInputBorder(),
-            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             prefixIcon: Icon(Icons.tag),
           ),
         ),

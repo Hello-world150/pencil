@@ -166,8 +166,6 @@ class _EditThoughtPageState extends State<EditThoughtPage> {
             textAlignVertical: TextAlignVertical.top,
             decoration: const InputDecoration(
               hintText: '在这里编辑你的想法...',
-              border: OutlineInputBorder(),
-              contentPadding: EdgeInsets.all(16.0),
             ),
           ),
         ),
@@ -191,8 +189,6 @@ class _EditThoughtPageState extends State<EditThoughtPage> {
               controller: _tagController,
               decoration: const InputDecoration(
                 hintText: '为你的想法添加标签...',
-                border: OutlineInputBorder(),
-                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 prefixIcon: Icon(Icons.tag),
               ),
             ),

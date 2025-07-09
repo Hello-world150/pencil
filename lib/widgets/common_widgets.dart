@@ -55,6 +55,15 @@ class TagSelector extends StatelessWidget {
   }
 }
 
+/// 标签过滤器组件的基础样式辅助方法
+class _TagFilterStyle {
+  static Color getBackgroundColor(BuildContext context) =>
+      Theme.of(context).colorScheme.secondaryContainer.withValues(alpha: 0.3);
+      
+  static Color getSelectedColor(BuildContext context) =>
+      Theme.of(context).colorScheme.secondaryContainer;
+}
+
 /// 标签过滤器组件
 class TagFilter extends StatelessWidget {
   final List<String> availableTags;
@@ -81,8 +90,8 @@ class TagFilter extends StatelessWidget {
           onSelected: (selected) {
             onTagChanged(selected ? tag : null);
           },
-          backgroundColor: Theme.of(context).colorScheme.secondaryContainer.withValues(alpha: 0.3),
-          selectedColor: Theme.of(context).colorScheme.secondaryContainer,
+          backgroundColor: _TagFilterStyle.getBackgroundColor(context),
+          selectedColor: _TagFilterStyle.getSelectedColor(context),
         );
       }).toList(),
     );
@@ -134,8 +143,8 @@ class EditableTagFilter extends StatelessWidget {
             onSelected: (selected) {
               onTagChanged(selected ? tag : null);
             },
-            backgroundColor: Theme.of(context).colorScheme.secondaryContainer.withValues(alpha: 0.3),
-            selectedColor: Theme.of(context).colorScheme.secondaryContainer,
+            backgroundColor: _TagFilterStyle.getBackgroundColor(context),
+            selectedColor: _TagFilterStyle.getSelectedColor(context),
             tooltip: onTagRenamed != null ? '长按编辑标签' : null,
           ),
         );
@@ -316,6 +325,14 @@ class _TagEditDialogState extends State<TagEditDialog> {
     }
   }
 
+  String? get _errorText {
+    final text = _controller.text.trim();
+    if (!_isValid && text.isEmpty) {
+      return '标签名称不能为空';
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -325,10 +342,7 @@ class _TagEditDialogState extends State<TagEditDialog> {
         decoration: InputDecoration(
           labelText: AppConstants.newTagName,
           hintText: AppConstants.tagRenameHint,
-          border: const OutlineInputBorder(),
-          errorText: !_isValid && _controller.text.trim().isEmpty 
-              ? '标签名称不能为空' 
-              : null,
+          errorText: _errorText,
         ),
         autofocus: true,
         onSubmitted: (_) => _confirm(),

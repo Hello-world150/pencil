@@ -7,12 +7,22 @@ import '../utils/utils.dart';
 /// 想法管理服务
 class ThoughtService {
   final List<ThoughtItem> _thoughts = [];
+  
+  // 缓存SharedPreferences实例以提高性能
+  SharedPreferences? _prefs;
 
   /// 获取所有想法
   List<ThoughtItem> get thoughts => List.unmodifiable(_thoughts);
 
-  /// 获取所有已使用的标签
+  /// 获取所有已使用的标签（缓存优化）
+  List<String>? _cachedTags;
   List<String> get usedTags {
+    _cachedTags ??= _computeUsedTags();
+    return _cachedTags!;
+  }
+
+  /// 计算已使用的标签
+  List<String> _computeUsedTags() {
     final tags = <String>{};
     for (final thought in _thoughts) {
       tags.add(thought.tag);
@@ -20,16 +30,26 @@ class ThoughtService {
     return tags.toList()..sort();
   }
 
-  /// 按标签分组的想法
+  /// 按标签分组的想法（缓存优化）
+  Map<String, List<ThoughtItem>>? _cachedGroupedThoughts;
   Map<String, List<ThoughtItem>> get groupedThoughts {
+    _cachedGroupedThoughts ??= _computeGroupedThoughts();
+    return _cachedGroupedThoughts!;
+  }
+
+  /// 计算按标签分组的想法
+  Map<String, List<ThoughtItem>> _computeGroupedThoughts() {
     final grouped = <String, List<ThoughtItem>>{};
     for (final thought in _thoughts) {
-      if (!grouped.containsKey(thought.tag)) {
-        grouped[thought.tag] = [];
-      }
-      grouped[thought.tag]!.add(thought);
+      grouped.putIfAbsent(thought.tag, () => []).add(thought);
     }
     return grouped;
+  }
+
+  /// 清除缓存
+  void _clearCache() {
+    _cachedTags = null;
+    _cachedGroupedThoughts = null;
   }
 
   /// 添加新想法
@@ -45,6 +65,7 @@ class ThoughtService {
     );
     
     _thoughts.add(thought);
+    _clearCache();
     return thought;
   }
 
@@ -53,6 +74,7 @@ class ThoughtService {
     final index = _thoughts.indexWhere((t) => t.id == updatedThought.id);
     if (index != -1) {
       _thoughts[index] = updatedThought;
+      _clearCache();
       return true;
     }
     return false;
@@ -62,13 +84,16 @@ class ThoughtService {
   bool deleteThought(String id) {
     final initialLength = _thoughts.length;
     _thoughts.removeWhere((thought) => thought.id == id);
-    return _thoughts.length != initialLength;
+    final success = _thoughts.length != initialLength;
+    if (success) _clearCache();
+    return success;
   }
 
   /// 删除标签及其所有想法
   int deleteThoughtsByTag(String tag) {
     final thoughtsToDelete = _thoughts.where((thought) => thought.tag == tag).toList();
     _thoughts.removeWhere((thought) => thought.tag == tag);
+    if (thoughtsToDelete.isNotEmpty) _clearCache();
     return thoughtsToDelete.length;
   }
 
@@ -95,6 +120,7 @@ class ThoughtService {
       }
     }
     
+    if (count > 0) _clearCache();
     return count;
   }
 
@@ -104,10 +130,16 @@ class ThoughtService {
   /// 获取想法总数
   int get count => _thoughts.length;
 
+  /// 获取SharedPreferences实例（缓存）
+  Future<SharedPreferences> _getPrefs() async {
+    _prefs ??= await SharedPreferences.getInstance();
+    return _prefs!;
+  }
+
   /// 从本地存储加载想法数据
   Future<bool> loadThoughts() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _getPrefs();
       final String? jsonString = prefs.getString(AppConstants.storageKey);
       
       if (jsonString == null || jsonString.isEmpty) {
@@ -121,6 +153,7 @@ class ThoughtService {
       
       _thoughts.clear();
       _thoughts.addAll(loadedThoughts);
+      _clearCache();
       
       return true;
     } catch (e) {
@@ -132,7 +165,7 @@ class ThoughtService {
   /// 保存想法数据到本地存储
   Future<bool> saveThoughts() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _getPrefs();
       final List<Map<String, dynamic>> jsonList = 
           _thoughts.map((thought) => thought.toMap()).toList();
       final String jsonString = jsonEncode(jsonList);
