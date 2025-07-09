@@ -1,0 +1,33 @@
+name: pencil
+description: "一个新的Flutter项目。"
+# 防止包意外发布到pub.dev
+publish_to: 'none'
+
+# 版本号和构建编号
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.8.1
+
+# 项目依赖
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  shared_preferences: ^2.2.2
+
+# 开发依赖
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+# Flutter配置
+flutter:
+  uses-material-design: true
+
+  # 自定义字体
+  fonts:
+    - family: ZhuqueFangsong
+      fonts:
+        - asset: fonts/ZhuqueFangsong-Regular.ttf
