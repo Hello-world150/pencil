@@ -1,5 +1,5 @@
 name: pencil
-description: "一个新的Flutter项目。"
+description: " 简单的记录想法的客户端，使用Flutter框架"
 # 防止包意外发布到pub.dev
 publish_to: 'none'
 
