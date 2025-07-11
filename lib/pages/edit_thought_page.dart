@@ -5,11 +5,18 @@ import '../services/thought_service.dart';
 import '../widgets/common_widgets.dart';
 import '../utils/utils.dart';
 
-/// 全屏编辑想法页面
+/// 想法编辑页面 - 提供全屏编辑和实时保存功能
 class EditThoughtPage extends StatefulWidget {
+  /// 要编辑的想法
   final ThoughtItem thought;
+  
+  /// 可用的标签列表
   final List<String> usedTags;
+  
+  /// 想法服务实例
   final ThoughtService thoughtService;
+  
+  /// 保存回调函数
   final Future<bool> Function(ThoughtItem) onSave;
 
   const EditThoughtPage({
@@ -32,6 +39,17 @@ class _EditThoughtPageState extends State<EditThoughtPage> {
   @override
   void initState() {
     super.initState();
+    _initializeControllers();
+  }
+
+  @override
+  void dispose() {
+    _disposeControllers();
+    super.dispose();
+  }
+
+  /// 初始化文本控制器
+  void _initializeControllers() {
     _contentController = TextEditingController(text: widget.thought.content);
     _tagController = TextEditingController(text: widget.thought.tag);
     
@@ -39,13 +57,12 @@ class _EditThoughtPageState extends State<EditThoughtPage> {
     _tagController.addListener(_onTextChanged);
   }
 
-  @override
-  void dispose() {
+  /// 清理文本控制器
+  void _disposeControllers() {
     _contentController.removeListener(_onTextChanged);
     _tagController.removeListener(_onTextChanged);
     _contentController.dispose();
     _tagController.dispose();
-    super.dispose();
   }
 
   void _onTextChanged() {

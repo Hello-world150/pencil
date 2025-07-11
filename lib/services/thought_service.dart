@@ -4,23 +4,42 @@ import '../models/thought_item.dart';
 import '../constants/app_constants.dart';
 import '../utils/utils.dart';
 
-/// 想法管理服务
+/// 想法管理服务 - 提供想法的增删改查和持久化功能
 class ThoughtService {
+  static const String _storageKey = AppConstants.storageKey;
+  
+  // 数据存储
   final List<ThoughtItem> _thoughts = [];
   
-  // 缓存SharedPreferences实例以提高性能
+  // 性能优化缓存
   SharedPreferences? _prefs;
-
-  /// 获取所有想法
-  List<ThoughtItem> get thoughts => List.unmodifiable(_thoughts);
-
-  /// 获取所有已使用的标签（缓存优化）
   List<String>? _cachedTags;
+  Map<String, List<ThoughtItem>>? _cachedGroupedThoughts;
+  
+  // 公共访问器
+  /// 获取所有想法（只读）
+  List<ThoughtItem> get thoughts => List.unmodifiable(_thoughts);
+  
+  /// 获取已使用的标签列表（缓存优化）
   List<String> get usedTags {
     _cachedTags ??= _computeUsedTags();
     return _cachedTags!;
   }
-
+  
+  /// 按标签分组的想法（缓存优化）
+  Map<String, List<ThoughtItem>> get groupedThoughts {
+    _cachedGroupedThoughts ??= _computeGroupedThoughts();
+    return _cachedGroupedThoughts!;
+  }
+  
+  /// 检查是否为空
+  bool get isEmpty => _thoughts.isEmpty;
+  
+  /// 获取想法总数
+  int get count => _thoughts.length;
+  
+  // ========== 私有计算方法 ==========
+  
   /// 计算已使用的标签
   List<String> _computeUsedTags() {
     final tags = <String>{};
@@ -29,14 +48,7 @@ class ThoughtService {
     }
     return tags.toList()..sort();
   }
-
-  /// 按标签分组的想法（缓存优化）
-  Map<String, List<ThoughtItem>>? _cachedGroupedThoughts;
-  Map<String, List<ThoughtItem>> get groupedThoughts {
-    _cachedGroupedThoughts ??= _computeGroupedThoughts();
-    return _cachedGroupedThoughts!;
-  }
-
+  
   /// 计算按标签分组的想法
   Map<String, List<ThoughtItem>> _computeGroupedThoughts() {
     final grouped = <String, List<ThoughtItem>>{};
@@ -51,6 +63,8 @@ class ThoughtService {
     _cachedTags = null;
     _cachedGroupedThoughts = null;
   }
+  
+  // ========== 数据操作方法 ==========
 
   /// 添加新想法
   ThoughtItem addThought({
@@ -123,12 +137,8 @@ class ThoughtService {
     if (count > 0) _clearCache();
     return count;
   }
-
-  /// 检查是否为空
-  bool get isEmpty => _thoughts.isEmpty;
-
-  /// 获取想法总数
-  int get count => _thoughts.length;
+  
+  // ========== 持久化方法 ==========
 
   /// 获取SharedPreferences实例（缓存）
   Future<SharedPreferences> _getPrefs() async {
@@ -140,24 +150,25 @@ class ThoughtService {
   Future<bool> loadThoughts() async {
     try {
       final prefs = await _getPrefs();
-      final String? jsonString = prefs.getString(AppConstants.storageKey);
+      final jsonString = prefs.getString(_storageKey);
       
       if (jsonString == null || jsonString.isEmpty) {
         return true; // 首次使用，没有数据是正常的
       }
       
-      final List<dynamic> jsonList = jsonDecode(jsonString);
-      final List<ThoughtItem> loadedThoughts = jsonList
+      final jsonList = jsonDecode(jsonString) as List<dynamic>;
+      final loadedThoughts = jsonList
           .map((json) => ThoughtItem.fromMap(json as Map<String, dynamic>))
           .toList();
       
-      _thoughts.clear();
-      _thoughts.addAll(loadedThoughts);
+      _thoughts
+        ..clear()
+        ..addAll(loadedThoughts);
       _clearCache();
       
       return true;
     } catch (e) {
-      // 加载失败，保持现有数据
+      // 加载失败时保持现有数据
       return false;
     }
   }
@@ -166,19 +177,19 @@ class ThoughtService {
   Future<bool> saveThoughts() async {
     try {
       final prefs = await _getPrefs();
-      final List<Map<String, dynamic>> jsonList = 
-          _thoughts.map((thought) => thought.toMap()).toList();
-      final String jsonString = jsonEncode(jsonList);
+      final jsonList = _thoughts.map((thought) => thought.toMap()).toList();
+      final jsonString = jsonEncode(jsonList);
       
-      await prefs.setString(AppConstants.storageKey, jsonString);
+      await prefs.setString(_storageKey, jsonString);
       return true;
     } catch (e) {
-      // 保存失败
       return false;
     }
   }
+  
+  // ========== 组合操作方法 ==========
 
-  /// 添加新想法（带自动保存）
+  /// 添加新想法并自动保存
   Future<ThoughtItem?> addThoughtAndSave({
     required String content,
     String? tag,
@@ -188,25 +199,23 @@ class ThoughtService {
     return success ? thought : null;
   }
 
-  /// 更新想法（带自动保存）
+  /// 更新想法并自动保存
   Future<bool> updateThoughtAndSave(ThoughtItem updatedThought) async {
-    final success = updateThought(updatedThought);
-    if (success) {
+    if (updateThought(updatedThought)) {
       return await saveThoughts();
     }
     return false;
   }
 
-  /// 删除想法（带自动保存）
+  /// 删除想法并自动保存
   Future<bool> deleteThoughtAndSave(String id) async {
-    final success = deleteThought(id);
-    if (success) {
+    if (deleteThought(id)) {
       return await saveThoughts();
     }
     return false;
   }
 
-  /// 删除标签及其所有想法（带自动保存）
+  /// 删除标签及其所有想法并自动保存
   Future<int> deleteThoughtsByTagAndSave(String tag) async {
     final count = deleteThoughtsByTag(tag);
     if (count > 0) {
@@ -215,7 +224,7 @@ class ThoughtService {
     return count;
   }
 
-  /// 重命名标签（带自动保存）
+  /// 重命名标签并自动保存
   Future<int> renameTagAndSave(String oldTag, String newTag) async {
     final count = renameTag(oldTag, newTag);
     if (count > 0) {

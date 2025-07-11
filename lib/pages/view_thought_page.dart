@@ -4,10 +4,15 @@ import '../models/thought_item.dart';
 import '../widgets/common_widgets.dart';
 import '../utils/utils.dart';
 
-/// 全屏浏览想法页面
+/// 想法详情查看页面 - 提供全屏阅读和快捷操作
 class ViewThoughtPage extends StatelessWidget {
+  /// 要查看的想法
   final ThoughtItem thought;
+  
+  /// 编辑回调
   final VoidCallback onEdit;
+  
+  /// 删除回调
   final VoidCallback onDelete;
 
   const ViewThoughtPage({
@@ -26,6 +31,7 @@ class ViewThoughtPage extends StatelessWidget {
     );
   }
 
+  /// 构建应用栏
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
       title: const Text('查看想法'),
@@ -40,6 +46,7 @@ class ViewThoughtPage extends StatelessWidget {
     );
   }
 
+  /// 构建主体内容
   Widget _buildBody(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(AppConstants.defaultPadding),
