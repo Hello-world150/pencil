@@ -116,13 +116,45 @@ class _TagDetailPageState extends State<TagDetailPage> {
 
   /// 构建想法内容
   Widget _buildThoughtContent(ThoughtItem thought) {
-    return Text(
-      thought.content,
-      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-        color: Theme.of(context).colorScheme.onSurfaceVariant,
-      ),
-      maxLines: 4,
-      overflow: TextOverflow.ellipsis,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 显示标题（如果有）
+        if (thought.title != null) ...[
+          Text(
+            thought.title!,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: Theme.of(context).colorScheme.primary,
+              fontWeight: FontWeight.w600,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 8),
+        ],
+        // 显示主要内容
+        Text(
+          thought.content,
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+          maxLines: thought.title != null ? 3 : 4,
+          overflow: TextOverflow.ellipsis,
+        ),
+        // 显示作者（如果有）
+        if (thought.author != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            '— ${thought.author}',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontStyle: FontStyle.italic,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ],
     );
   }
 

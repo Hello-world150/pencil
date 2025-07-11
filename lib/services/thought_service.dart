@@ -76,6 +76,8 @@ class ThoughtService {
   ThoughtItem addThought({
     required String content,
     String? tag,
+    String? title,
+    String? author,
   }) {
     final thoughtTag = Utils.safeString(tag, AppConstants.defaultTag);
     final thought = ThoughtItem(
@@ -83,6 +85,8 @@ class ThoughtService {
       content: content,
       tag: thoughtTag,
       createdAt: DateTime.now(),
+      title: title?.trim().isEmpty == true ? null : title?.trim(),
+      author: author?.trim().isEmpty == true ? null : author?.trim(),
     );
     
     _thoughts.add(thought);
@@ -240,8 +244,15 @@ class ThoughtService {
   Future<ThoughtItem?> addThoughtAndSave({
     required String content,
     String? tag,
+    String? title,
+    String? author,
   }) async {
-    final thought = addThought(content: content, tag: tag);
+    final thought = addThought(
+      content: content, 
+      tag: tag,
+      title: title,
+      author: author,
+    );
     final success = await saveThoughts();
     return success ? thought : null;
   }

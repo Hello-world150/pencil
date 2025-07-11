@@ -34,6 +34,8 @@ class EditThoughtPage extends StatefulWidget {
 class _EditThoughtPageState extends State<EditThoughtPage> {
   late final TextEditingController _contentController;
   late final TextEditingController _tagController;
+  late final TextEditingController _titleController;
+  late final TextEditingController _authorController;
   bool _hasUnsavedChanges = false;
 
   @override
@@ -52,22 +54,32 @@ class _EditThoughtPageState extends State<EditThoughtPage> {
   void _initializeControllers() {
     _contentController = TextEditingController(text: widget.thought.content);
     _tagController = TextEditingController(text: widget.thought.tag);
+    _titleController = TextEditingController(text: widget.thought.title ?? '');
+    _authorController = TextEditingController(text: widget.thought.author ?? '');
     
     _contentController.addListener(_onTextChanged);
     _tagController.addListener(_onTextChanged);
+    _titleController.addListener(_onTextChanged);
+    _authorController.addListener(_onTextChanged);
   }
 
   /// 清理文本控制器
   void _disposeControllers() {
     _contentController.removeListener(_onTextChanged);
     _tagController.removeListener(_onTextChanged);
+    _titleController.removeListener(_onTextChanged);
+    _authorController.removeListener(_onTextChanged);
     _contentController.dispose();
     _tagController.dispose();
+    _titleController.dispose();
+    _authorController.dispose();
   }
 
   void _onTextChanged() {
     final hasChanges = _contentController.text != widget.thought.content ||
-                      _tagController.text != widget.thought.tag;
+                      _tagController.text != widget.thought.tag ||
+                      _titleController.text != (widget.thought.title ?? '') ||
+                      _authorController.text != (widget.thought.author ?? '');
     
     if (hasChanges != _hasUnsavedChanges) {
       setState(() {
@@ -79,11 +91,15 @@ class _EditThoughtPageState extends State<EditThoughtPage> {
   Future<void> _saveChanges() async {
     final newContent = _contentController.text.trim();
     final newTag = Utils.safeString(_tagController.text, AppConstants.defaultTag);
+    final newTitle = _titleController.text.trim().isEmpty ? null : _titleController.text.trim();
+    final newAuthor = _authorController.text.trim().isEmpty ? null : _authorController.text.trim();
     
     if (Utils.isNotEmpty(newContent)) {
       final updatedThought = widget.thought.copyWith(
         content: newContent,
         tag: newTag,
+        title: newTitle,
+        author: newAuthor,
       );
       
       final success = await widget.onSave(updatedThought);
@@ -162,12 +178,40 @@ class _EditThoughtPageState extends State<EditThoughtPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _buildTitleEditor(),
+          const SizedBox(height: 8),
           _buildContentEditor(),
+          const SizedBox(height: 16),
+          _buildAuthorEditor(),
           const SizedBox(height: 16),
           _buildTagEditor(),
           const SizedBox(height: 16),
           _buildCreationInfo(),
         ],
+      ),
+    );
+  }
+
+  Widget _buildTitleEditor() {
+    return TextField(
+      controller: _titleController,
+      decoration: const InputDecoration(
+        labelText: '标题（可选）',
+        hintText: '为你的想法添加一个标题...',
+        prefixIcon: Icon(Icons.title),
+        border: OutlineInputBorder(),
+      ),
+    );
+  }
+
+  Widget _buildAuthorEditor() {
+    return TextField(
+      controller: _authorController,
+      decoration: const InputDecoration(
+        labelText: '作者/出处（可选）',
+        hintText: '记录想法的来源或作者...',
+        prefixIcon: Icon(Icons.person_outline),
+        border: OutlineInputBorder(),
       ),
     );
   }

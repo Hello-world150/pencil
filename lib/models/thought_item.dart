@@ -11,12 +11,20 @@ class ThoughtItem {
   
   /// 创建时间
   final DateTime createdAt;
+  
+  /// 可选标题
+  final String? title;
+  
+  /// 可选作者或出处
+  final String? author;
 
   const ThoughtItem({
     required this.id,
     required this.content,
     required this.tag,
     required this.createdAt,
+    this.title,
+    this.author,
   });
 
   /// 复制并修改想法
@@ -25,12 +33,16 @@ class ThoughtItem {
     String? content,
     String? tag,
     DateTime? createdAt,
+    String? title,
+    String? author,
   }) {
     return ThoughtItem(
       id: id ?? this.id,
       content: content ?? this.content,
       tag: tag ?? this.tag,
       createdAt: createdAt ?? this.createdAt,
+      title: title ?? this.title,
+      author: author ?? this.author,
     );
   }
 
@@ -41,6 +53,8 @@ class ThoughtItem {
       'content': content,
       'tag': tag,
       'createdAt': createdAt.millisecondsSinceEpoch,
+      'title': title,
+      'author': author,
     };
   }
 
@@ -51,12 +65,15 @@ class ThoughtItem {
       content: map['content'] ?? '',
       tag: map['tag'] ?? '',
       createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt'] ?? 0),
+      title: map['title'],
+      author: map['author'],
     );
   }
 
   /// 转换为JSON字符串
   String toJson() {
-    return '{"id":"$id","content":"${content.replaceAll('"', '\\"')}","tag":"$tag","createdAt":${createdAt.millisecondsSinceEpoch}}';
+    final map = toMap();
+    return '{"id":"${map['id']}","content":"${(map['content'] as String).replaceAll('"', '\\"')}","tag":"${map['tag']}","createdAt":${map['createdAt']},"title":"${map['title'] ?? ''}","author":"${map['author'] ?? ''}"}';
   }
 
   /// 从JSON字符串创建
@@ -75,7 +92,14 @@ class ThoughtItem {
         if (key == 'createdAt') {
           map[key] = int.tryParse(value) ?? 0;
         } else {
-          map[key] = value.replaceAll('\\"', '"');
+          final cleanValue = value.replaceAll('\\"', '"');
+          if (key == 'title' && cleanValue.isEmpty) {
+            map[key] = null;
+          } else if (key == 'author' && cleanValue.isEmpty) {
+            map[key] = null;
+          } else {
+            map[key] = cleanValue;
+          }
         }
       }
     }

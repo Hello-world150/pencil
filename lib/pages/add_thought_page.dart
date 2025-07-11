@@ -25,12 +25,16 @@ class AddThoughtPage extends StatefulWidget {
 class _AddThoughtPageState extends State<AddThoughtPage> {
   late final TextEditingController _textController;
   late final TextEditingController _tagController;
+  late final TextEditingController _titleController;
+  late final TextEditingController _authorController;
 
   @override
   void initState() {
     super.initState();
     _textController = TextEditingController();
     _tagController = TextEditingController();
+    _titleController = TextEditingController();
+    _authorController = TextEditingController();
     _loadUsedTags();
   }
 
@@ -38,6 +42,8 @@ class _AddThoughtPageState extends State<AddThoughtPage> {
   void dispose() {
     _textController.dispose();
     _tagController.dispose();
+    _titleController.dispose();
+    _authorController.dispose();
     super.dispose();
   }
 
@@ -62,7 +68,11 @@ class _AddThoughtPageState extends State<AddThoughtPage> {
         child: Column(
           children: [
             const SizedBox(height: 20),
+            _buildTitleInput(),
+            const SizedBox(height: 16),
             _buildTextEditor(),
+            const SizedBox(height: 16),
+            _buildAuthorInput(),
             const SizedBox(height: 16),
             _buildTagInput(),
           ],
@@ -77,6 +87,30 @@ class _AddThoughtPageState extends State<AddThoughtPage> {
       onPressed: _saveNewThought,
       tooltip: AppConstants.saveTooltip,
       child: const Icon(Icons.save),
+    );
+  }
+
+  /// 构建标题输入框
+  Widget _buildTitleInput() {
+    return TextField(
+      controller: _titleController,
+      decoration: const InputDecoration(
+        labelText: '标题（可选）',
+        hintText: '为你的想法添加一个标题...',
+        prefixIcon: Icon(Icons.title),
+      ),
+    );
+  }
+
+  /// 构建作者输入框
+  Widget _buildAuthorInput() {
+    return TextField(
+      controller: _authorController,
+      decoration: const InputDecoration(
+        labelText: '作者/出处（可选）',
+        hintText: '记录想法的来源或作者...',
+        prefixIcon: Icon(Icons.person_outline),
+      ),
     );
   }
 
@@ -148,6 +182,8 @@ class _AddThoughtPageState extends State<AddThoughtPage> {
     final thought = await widget.thoughtService.addThoughtAndSave(
       content: content,
       tag: _tagController.text,
+      title: _titleController.text.trim().isEmpty ? null : _titleController.text.trim(),
+      author: _authorController.text.trim().isEmpty ? null : _authorController.text.trim(),
     );
     
     if (thought != null) {
@@ -164,6 +200,8 @@ class _AddThoughtPageState extends State<AddThoughtPage> {
     setState(() {
       _textController.clear();
       _tagController.clear();
+      _titleController.clear();
+      _authorController.clear();
     });
   }
 

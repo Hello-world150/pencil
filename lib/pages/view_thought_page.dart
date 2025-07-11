@@ -78,17 +78,53 @@ class ViewThoughtPage extends StatelessWidget {
             padding: const EdgeInsets.all(24.0),
             child: Center(
               child: SingleChildScrollView(
-                child: SelectableText(
-                  thought.content,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 20,
-                    height: 1.8,
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontWeight: FontWeight.w400,
-                    letterSpacing: 0.5,
-                    fontFamily: AppConstants.fontFamily,
-                  ),
+                child: Column(
+                  children: [
+                    // 显示标题（如果有）
+                    if (thought.title != null) ...[
+                      SelectableText(
+                        thought.title!,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 24,
+                          height: 1.5,
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.5,
+                          fontFamily: AppConstants.fontFamily,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    // 显示作者（如果有）
+                    if (thought.author != null) ...[
+                      SelectableText(
+                        '— ${thought.author}',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 16,
+                          height: 1.4,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontStyle: FontStyle.italic,
+                          fontFamily: AppConstants.fontFamily,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+                    // 主要内容
+                    SelectableText(
+                      thought.content,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 20,
+                        height: 1.8,
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.w400,
+                        letterSpacing: 0.5,
+                        fontFamily: AppConstants.fontFamily,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
