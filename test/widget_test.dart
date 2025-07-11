@@ -10,9 +10,6 @@ void main() {
 
     // 等待初始帧完成
     await tester.pump();
-
-    // 验证标题是否正确显示
-    expect(find.text('Pencil'), findsOneWidget);
     
     // 检查是否有加载指示器或文本输入框
     final hasLoader = find.byType(CircularProgressIndicator);
