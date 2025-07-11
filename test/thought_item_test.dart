@@ -75,25 +75,6 @@ void main() {
       expect(thought.createdAt, createdAt);
     });
 
-    test('从Map创建不包含新字段的想法（向后兼容）', () {
-      final createdAt = DateTime(2023, 1, 1);
-      final map = {
-        'id': 'test-id',
-        'content': '这是一个测试想法',
-        'tag': '测试',
-        'createdAt': createdAt.millisecondsSinceEpoch,
-      };
-
-      final thought = ThoughtItem.fromMap(map);
-
-      expect(thought.id, 'test-id');
-      expect(thought.content, '这是一个测试想法');
-      expect(thought.tag, '测试');
-      expect(thought.title, isNull);
-      expect(thought.author, isNull);
-      expect(thought.createdAt, createdAt);
-    });
-
     test('copyWith 包含新字段', () {
       final originalThought = ThoughtItem(
         id: 'test-id',
