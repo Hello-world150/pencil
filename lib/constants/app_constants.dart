@@ -51,9 +51,6 @@ class AppConstants {
   /// 想法输入提示
   static const String thoughtHint = '想法...';
   
-  /// 标签输入提示
-  static const String tagHint = '添加标签...';
-  
   /// 标签输入标签
   static const String tagLabel = '标签（可选）';
   
@@ -64,7 +61,7 @@ class AppConstants {
   static const String noTagsMessage = '暂无可用标签';
   
   /// 选择标签提示
-  static const String quickSelectTagsHint = '已有标签：';
+  static const String quickSelectTagsHint = '选择标签：';
   
   // ========== 操作按钮提示文本 ==========
   

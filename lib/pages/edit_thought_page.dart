@@ -188,7 +188,7 @@ class _EditThoughtPageState extends State<EditThoughtPage> {
             if (widget.usedTags.isNotEmpty) ...[
               const SizedBox(height: 12),
               Text(
-                '已有标签：',
+                '选择标签：',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Colors.grey[600],
                 ),

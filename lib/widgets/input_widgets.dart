@@ -63,7 +63,6 @@ class TitleInputField extends StatelessWidget {
     return CustomTextField(
       controller: controller,
       labelText: '标题（可选）',
-      hintText: '为你的想法添加一个标题...',
       prefixIcon: Icons.title,
       onChanged: onChanged,
     );
@@ -86,7 +85,6 @@ class AuthorInputField extends StatelessWidget {
     return CustomTextField(
       controller: controller,
       labelText: '作者/出处（可选）',
-      hintText: '记录想法的来源或作者...',
       prefixIcon: Icons.person_outline,
       onChanged: onChanged,
     );
@@ -133,7 +131,6 @@ class TagInputField extends StatelessWidget {
     return CustomTextField(
       controller: controller,
       labelText: AppConstants.tagLabel,
-      hintText: AppConstants.tagHint,
       prefixIcon: Icons.tag,
       onChanged: onChanged,
     );
