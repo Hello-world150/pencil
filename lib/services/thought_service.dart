@@ -7,9 +7,11 @@ import '../utils/utils.dart';
 /// 想法管理服务 - 提供想法的增删改查和持久化功能
 class ThoughtService {
   static const String _storageKey = AppConstants.storageKey;
+  static const String _tagsStorageKey = '${AppConstants.storageKey}_tags';
   
   // 数据存储
   final List<ThoughtItem> _thoughts = [];
+  final Set<String> _tags = {}; // 独立的标签存储
   
   // 性能优化缓存
   SharedPreferences? _prefs;
@@ -42,19 +44,23 @@ class ThoughtService {
   
   /// 计算已使用的标签
   List<String> _computeUsedTags() {
-    final tags = <String>{};
-    for (final thought in _thoughts) {
-      tags.add(thought.tag);
-    }
-    return tags.toList()..sort();
+    return _tags.toList()..sort();
   }
   
   /// 计算按标签分组的想法
   Map<String, List<ThoughtItem>> _computeGroupedThoughts() {
     final grouped = <String, List<ThoughtItem>>{};
+    
+    // 首先为所有标签创建空列表
+    for (final tag in _tags) {
+      grouped[tag] = [];
+    }
+    
+    // 然后添加想法到对应标签
     for (final thought in _thoughts) {
       grouped.putIfAbsent(thought.tag, () => []).add(thought);
     }
+    
     return grouped;
   }
 
@@ -71,14 +77,16 @@ class ThoughtService {
     required String content,
     String? tag,
   }) {
+    final thoughtTag = Utils.safeString(tag, AppConstants.defaultTag);
     final thought = ThoughtItem(
       id: Utils.generateId(),
       content: content,
-      tag: Utils.safeString(tag, AppConstants.defaultTag),
+      tag: thoughtTag,
       createdAt: DateTime.now(),
     );
     
     _thoughts.add(thought);
+    _tags.add(thoughtTag); // 添加标签到独立存储
     _clearCache();
     return thought;
   }
@@ -88,18 +96,22 @@ class ThoughtService {
     final index = _thoughts.indexWhere((t) => t.id == updatedThought.id);
     if (index != -1) {
       _thoughts[index] = updatedThought;
+      _tags.add(updatedThought.tag); // 确保新标签被添加
       _clearCache();
       return true;
     }
     return false;
   }
 
-  /// 删除想法
+  /// 删除想法（保留空标签）
   bool deleteThought(String id) {
     final initialLength = _thoughts.length;
     _thoughts.removeWhere((thought) => thought.id == id);
     final success = _thoughts.length != initialLength;
-    if (success) _clearCache();
+    if (success) {
+      // 注意：不删除标签，保留空标签
+      _clearCache();
+    }
     return success;
   }
 
@@ -107,8 +119,19 @@ class ThoughtService {
   int deleteThoughtsByTag(String tag) {
     final thoughtsToDelete = _thoughts.where((thought) => thought.tag == tag).toList();
     _thoughts.removeWhere((thought) => thought.tag == tag);
+    _tags.remove(tag); // 删除标签本身
     if (thoughtsToDelete.isNotEmpty) _clearCache();
     return thoughtsToDelete.length;
+  }
+
+  /// 删除空标签（手动清理）
+  bool deleteEmptyTag(String tag) {
+    final hasThoughts = _thoughts.any((thought) => thought.tag == tag);
+    if (!hasThoughts && _tags.remove(tag)) {
+      _clearCache();
+      return true;
+    }
+    return false;
   }
 
   /// 根据ID查找想法
@@ -134,6 +157,11 @@ class ThoughtService {
       }
     }
     
+    // 更新标签存储
+    if (_tags.remove(oldTag)) {
+      _tags.add(cleanNewTag);
+    }
+    
     if (count > 0) _clearCache();
     return count;
   }
@@ -150,22 +178,35 @@ class ThoughtService {
   Future<bool> loadThoughts() async {
     try {
       final prefs = await _getPrefs();
-      final jsonString = prefs.getString(_storageKey);
       
-      if (jsonString == null || jsonString.isEmpty) {
-        return true; // 首次使用，没有数据是正常的
+      // 加载想法数据
+      final jsonString = prefs.getString(_storageKey);
+      if (jsonString != null && jsonString.isNotEmpty) {
+        final jsonList = jsonDecode(jsonString) as List<dynamic>;
+        final loadedThoughts = jsonList
+            .map((json) => ThoughtItem.fromMap(json as Map<String, dynamic>))
+            .toList();
+        
+        _thoughts
+          ..clear()
+          ..addAll(loadedThoughts);
       }
       
-      final jsonList = jsonDecode(jsonString) as List<dynamic>;
-      final loadedThoughts = jsonList
-          .map((json) => ThoughtItem.fromMap(json as Map<String, dynamic>))
-          .toList();
+      // 加载标签数据
+      final tagsString = prefs.getString(_tagsStorageKey);
+      if (tagsString != null && tagsString.isNotEmpty) {
+        final tagsList = jsonDecode(tagsString) as List<dynamic>;
+        _tags
+          ..clear()
+          ..addAll(tagsList.cast<String>());
+      }
       
-      _thoughts
-        ..clear()
-        ..addAll(loadedThoughts);
+      // 确保所有想法的标签都在标签集合中
+      for (final thought in _thoughts) {
+        _tags.add(thought.tag);
+      }
+      
       _clearCache();
-      
       return true;
     } catch (e) {
       // 加载失败时保持现有数据
@@ -177,10 +218,16 @@ class ThoughtService {
   Future<bool> saveThoughts() async {
     try {
       final prefs = await _getPrefs();
+      
+      // 保存想法数据
       final jsonList = _thoughts.map((thought) => thought.toMap()).toList();
       final jsonString = jsonEncode(jsonList);
-      
       await prefs.setString(_storageKey, jsonString);
+      
+      // 保存标签数据
+      final tagsString = jsonEncode(_tags.toList());
+      await prefs.setString(_tagsStorageKey, tagsString);
+      
       return true;
     } catch (e) {
       return false;
