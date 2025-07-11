@@ -16,7 +16,7 @@ void main() {
     
     // 检查是否有加载指示器或文本输入框
     final hasLoader = find.byType(CircularProgressIndicator);
-    final hasTextHint = find.text('在这里写下你的想法...');
+    final hasTextHint = find.text('想法...');
     
     // 应该至少有一个存在（要么在加载，要么已经加载完成显示输入框）
     expect(hasLoader.evaluate().isNotEmpty || hasTextHint.evaluate().isNotEmpty, isTrue);

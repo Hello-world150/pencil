@@ -49,10 +49,10 @@ class AppConstants {
   // ========== 用户界面文案 ==========
   
   /// 想法输入提示
-  static const String thoughtHint = '在这里写下你的想法...';
+  static const String thoughtHint = '想法...';
   
   /// 标签输入提示
-  static const String tagHint = '为你的想法添加标签...';
+  static const String tagHint = '添加标签...';
   
   /// 标签输入标签
   static const String tagLabel = '标签（可选）';
@@ -63,8 +63,8 @@ class AppConstants {
   /// 无标签提示消息
   static const String noTagsMessage = '暂无可用标签';
   
-  /// 快速选择标签提示
-  static const String quickSelectTagsHint = '快速选择已有标签：';
+  /// 选择标签提示
+  static const String quickSelectTagsHint = '已有标签：';
   
   // ========== 操作按钮提示文本 ==========
   
@@ -95,7 +95,7 @@ class AppConstants {
   static const String tagRenamed = '标签已重命名';
   
   /// 标签重命名输入提示
-  static const String tagRenameHint = '输入新的标签名称...';
+  static const String tagRenameHint = '新的标签名称...';
   
   // ========== 对话框按钮文本 ==========
   
