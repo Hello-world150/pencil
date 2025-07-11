@@ -151,7 +151,8 @@ class _EditThoughtPageState extends State<EditThoughtPage> {
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
       title: const Text('编辑想法'),
-      backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+      foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
     );
   }
 

@@ -35,7 +35,8 @@ class ViewThoughtPage extends StatelessWidget {
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
       title: const Text('查看想法'),
-      backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+      foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
       actions: [
         IconButton(
           icon: const Icon(Icons.delete_outline),

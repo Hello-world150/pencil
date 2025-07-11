@@ -49,30 +49,24 @@ class _AddThoughtPageState extends State<AddThoughtPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _buildAppBar(),
       body: _buildBody(),
       floatingActionButton: _buildSaveButton(),
     );
   }
 
-  /// 构建应用栏
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      title: const Text('新增想法'),
-    );
-  }
-
   /// 构建主体内容
   Widget _buildBody() {
-    return Padding(
-      padding: const EdgeInsets.all(AppConstants.defaultPadding),
-      child: Column(
-        children: [
-          const SizedBox(height: 20),
-          _buildTextEditor(),
-          const SizedBox(height: 16),
-          _buildTagInput(),
-        ],
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(AppConstants.defaultPadding),
+        child: Column(
+          children: [
+            const SizedBox(height: 20),
+            _buildTextEditor(),
+            const SizedBox(height: 16),
+            _buildTagInput(),
+          ],
+        ),
       ),
     );
   }

@@ -3,9 +3,7 @@ import '../constants/app_constants.dart';
 import '../models/thought_item.dart';
 import '../services/thought_service.dart';
 import '../widgets/common_widgets.dart';
-import '../widgets/thought_widgets.dart';
-import '../pages/edit_thought_page.dart';
-import '../pages/view_thought_page.dart';
+import '../pages/tag_detail_page.dart';
 
 /// 想法展示主页面 - 专注于展示想法列表和管理
 class HomePage extends StatefulWidget {
@@ -59,9 +57,11 @@ class HomePageState extends State<HomePage> {
       return const Center(child: CircularProgressIndicator());
     }
     
-    return Padding(
-      padding: const EdgeInsets.all(AppConstants.defaultPadding),
-      child: _buildContent(),
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(AppConstants.defaultPadding),
+        child: _buildContent(),
+      ),
     );
   }
 
@@ -74,49 +74,137 @@ class HomePageState extends State<HomePage> {
       );
     }
     
-    return _buildThoughtsList();
+    return _buildTagsList();
   }
 
-  /// 构建想法列表
-  Widget _buildThoughtsList() {
-    return ListView(
-      children: _thoughtService.groupedThoughts.entries.map(
-        (entry) => _buildTagGroup(entry.key, entry.value),
-      ).toList(),
+  /// 构建标签列表
+  Widget _buildTagsList() {
+    return ListView.builder(
+      itemCount: _thoughtService.groupedThoughts.length,
+      itemBuilder: (context, index) {
+        final entry = _thoughtService.groupedThoughts.entries.elementAt(index);
+        return _buildTagListItem(entry.key, entry.value);
+      },
     );
   }
 
-  /// 构建标签分组
-  Widget _buildTagGroup(String tag, List<ThoughtItem> thoughts) {
-    return TagGroupCard(
-      tag: tag,
-      thoughts: thoughts,
-      onThoughtTap: _viewThought,
-      onThoughtEdit: _editThought,
-      onThoughtDelete: _deleteThought,
-      onTagDelete: () => _deleteTag(tag),
-      onTagEdit: _editTag,
+  /// 构建标签列表项
+  Widget _buildTagListItem(String tag, List<ThoughtItem> thoughts) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+      elevation: AppConstants.cardElevation,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+      ),
+      child: ListTile(
+        onTap: () => _navigateToTagDetail(tag, thoughts),
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: colorScheme.primaryContainer,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            tag.isNotEmpty ? tag[0].toUpperCase() : '#',
+            style: TextStyle(
+              color: colorScheme.onPrimaryContainer,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        title: Text(
+          tag,
+          style: const TextStyle(
+            fontWeight: FontWeight.w500,
+            fontSize: 16,
+          ),
+        ),
+        subtitle: Text(
+          '${thoughts.length} 条想法',
+          style: TextStyle(
+            color: Colors.grey[600],
+            fontSize: 14,
+          ),
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              onPressed: () => _editTag(tag),
+              tooltip: '编辑标签',
+              iconSize: 20,
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete_sweep),
+              onPressed: () => _deleteTag(tag),
+              tooltip: '删除标签及所有想法',
+              iconSize: 20,
+            ),
+            const Icon(Icons.chevron_right),
+          ],
+        ),
+      ),
     );
   }
 
   // ========== 想法操作方法 ==========
 
-  /// 删除想法
-  Future<void> _deleteThought(ThoughtItem thought) async {
-    final success = await _thoughtService.deleteThoughtAndSave(thought.id);
-    if (success) {
-      setState(() {});
-      _showMessage(AppConstants.thoughtDeleted);
-    } else {
-      _showMessage(AppConstants.dataSaveFailed);
-    }
-  }
-
   /// 删除标签及其所有想法
   Future<void> _deleteTag(String tag) async {
+    final thoughts = _thoughtService.groupedThoughts[tag] ?? [];
+    final thoughtCount = thoughts.length;
+    
+    // 显示确认对话框
+    final confirmed = await _showDeleteTagConfirmation(tag, thoughtCount);
+    if (!confirmed) return;
+    
     final deletedCount = await _thoughtService.deleteThoughtsByTagAndSave(tag);
     setState(() {});
     _showMessage('标签"$tag"及其 $deletedCount 条想法已删除！');
+  }
+
+  /// 显示删除标签确认对话框
+  Future<bool> _showDeleteTagConfirmation(String tag, int thoughtCount) async {
+    return await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('确认删除'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('确定要删除标签"$tag"吗？'),
+            const SizedBox(height: 8),
+            Text(
+              '这将同时删除该标签下的 $thoughtCount 条想法，此操作无法撤销。',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.error,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    ) ?? false;
   }
 
   /// 编辑标签
@@ -138,44 +226,20 @@ class HomePageState extends State<HomePage> {
 
   // ========== 页面导航方法 ==========
 
-  /// 查看想法详情
-  void _viewThought(ThoughtItem thought) {
+  /// 导航到标签详情页面
+  void _navigateToTagDetail(String tag, List<ThoughtItem> thoughts) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => ViewThoughtPage(
-          thought: thought,
-          onEdit: () {
-            Navigator.of(context).pop();
-            _editThought(thought);
-          },
-          onDelete: () {
-            Navigator.of(context).pop();
-            _deleteThought(thought);
-          },
-        ),
-      ),
-    );
-  }
-
-  /// 编辑想法
-  void _editThought(ThoughtItem thought) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => EditThoughtPage(
-          thought: thought,
-          usedTags: _thoughtService.usedTags,
+        builder: (context) => TagDetailPage(
+          tag: tag,
+          thoughts: thoughts,
           thoughtService: _thoughtService,
-          onSave: (updatedThought) async {
-            final success = await _thoughtService.updateThoughtAndSave(updatedThought);
-            if (success) {
-              setState(() {});
-              _showMessage(AppConstants.thoughtUpdated);
-            }
-            return success;
-          },
         ),
       ),
-    );
+    ).then((_) {
+      // 从标签详情页返回时刷新数据
+      refreshData();
+    });
   }
 
   // ========== 工具方法 ==========
