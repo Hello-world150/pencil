@@ -153,18 +153,13 @@ class _EditThoughtPageState extends State<EditThoughtPage> {
 
   Widget _buildContentEditor() {
     return Expanded(
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: TextField(
-            controller: _formManager.contentController,
-            maxLines: null,
-            expands: true,
-            textAlignVertical: TextAlignVertical.top,
-            decoration: const InputDecoration(
-              hintText: '在这里编辑你的想法...',
-            ),
-          ),
+      child: TextField(
+        controller: _formManager.contentController,
+        maxLines: null,
+        expands: true,
+        textAlignVertical: TextAlignVertical.top,
+        decoration: const InputDecoration(
+          hintText: '在这里编辑你的想法...',
         ),
       ),
     );
