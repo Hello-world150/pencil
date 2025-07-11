@@ -112,17 +112,20 @@ class TagListPageState extends State<TagListPage> {
   Widget _buildTagIcon(String tag) {
     final colorScheme = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.all(8),
+      width: 40,
+      height: 40,
       decoration: BoxDecoration(
         color: colorScheme.primaryContainer,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Text(
-        tag.isNotEmpty ? tag[0].toUpperCase() : '#',
-        style: TextStyle(
-          color: colorScheme.onPrimaryContainer,
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
+      child: Center(
+        child: Text(
+          tag.isNotEmpty ? tag[0].toUpperCase() : '#',
+          style: TextStyle(
+            color: colorScheme.onPrimaryContainer,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
     );
@@ -167,7 +170,6 @@ class TagListPageState extends State<TagListPage> {
           tooltip: '删除标签及所有想法',
           iconSize: 20,
         ),
-        const Icon(Icons.chevron_right),
       ],
     );
   }
