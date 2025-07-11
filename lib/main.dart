@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'constants/app_constants.dart';
+import 'pages/main_screen.dart';
 import 'theme/app_theme.dart';
-import 'pages/home_page.dart';
 
 void main() {
   runApp(const PencilApp());
@@ -17,7 +17,7 @@ class PencilApp extends StatelessWidget {
       title: AppConstants.appName,
       theme: AppTheme.lightTheme(),
       darkTheme: AppTheme.darkTheme(),
-      home: const HomePage(),
+      home: const MainScreen(),
       debugShowCheckedModeBanner: false,
     );
   }

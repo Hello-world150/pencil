@@ -6,32 +6,38 @@ import '../widgets/common_widgets.dart';
 import '../widgets/thought_widgets.dart';
 import '../pages/edit_thought_page.dart';
 import '../pages/view_thought_page.dart';
-import '../utils/utils.dart';
 
 /// 主页面
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final ThoughtService? thoughtService;
+  
+  const HomePage({super.key, this.thoughtService});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  HomePageState createState() => HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
-  final TextEditingController _textController = TextEditingController();
-  final TextEditingController _tagController = TextEditingController();
-  final ThoughtService _thoughtService = ThoughtService();
+class HomePageState extends State<HomePage> {
+  late final ThoughtService _thoughtService;
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
+    _thoughtService = widget.thoughtService ?? ThoughtService();
     _loadData();
+  }
+
+  /// 刷新数据的公共方法
+  Future<void> refreshData() async {
+    setState(() {
+      _isLoading = true;
+    });
+    await _loadData();
   }
 
   @override
   void dispose() {
-    _textController.dispose();
-    _tagController.dispose();
     super.dispose();
   }
 
@@ -50,16 +56,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _buildAppBar(),
       body: _buildBody(),
-      floatingActionButton: _buildFloatingActionButton(),
-    );
-  }
-
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-      title: const Text(AppConstants.appName),
     );
   }
 
@@ -72,111 +69,32 @@ class _HomePageState extends State<HomePage> {
     
     return Padding(
       padding: const EdgeInsets.all(AppConstants.defaultPadding),
-      child: Column(
-        children: [
-          const SizedBox(height: 20),
-          _buildTextEditor(),
-          const SizedBox(height: 16),
-          _buildTagInput(),
-          const SizedBox(height: 16),
-          _buildThoughtsList(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTextEditor() {
-    return TextField(
-      controller: _textController,
-      maxLines: AppConstants.maxTextFieldLines,
-      minLines: AppConstants.defaultTextFieldLines,
-      decoration: const InputDecoration(
-        hintText: AppConstants.thoughtHint,
-      ),
-    );
-  }
-
-  Widget _buildTagInput() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        TextField(
-          controller: _tagController,
-          decoration: const InputDecoration(
-            labelText: AppConstants.tagLabel,
-            hintText: AppConstants.tagHint,
-            prefixIcon: Icon(Icons.tag),
-          ),
-        ),
-        if (_thoughtService.usedTags.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          TagSelector(
-            availableTags: _thoughtService.usedTags,
-            onTagSelected: (tag) {
-              setState(() {
-                _tagController.text = tag;
-              });
-            },
-          ),
-        ],
-      ],
+      child: _buildThoughtsList(),
     );
   }
 
   Widget _buildThoughtsList() {
-    return Expanded(
-      child: _thoughtService.isEmpty
-          ? const EmptyState(
-              message: AppConstants.emptyStateMessage,
-              icon: Icons.lightbulb_outline,
-            )
-          : ListView(
-              children: _thoughtService.groupedThoughts.entries.map((entry) {
-                final tag = entry.key;
-                final thoughts = entry.value;
-                
-                return TagGroupCard(
-                  tag: tag,
-                  thoughts: thoughts,
-                  onThoughtTap: _viewThought,
-                  onThoughtEdit: _editThought,
-                  onThoughtDelete: _deleteThought,
-                  onTagDelete: () => _deleteTag(tag),
-                  onTagEdit: _editTag,
-                );
-              }).toList(),
-            ),
-    );
-  }
-
-  Widget _buildFloatingActionButton() {
-    return FloatingActionButton(
-      onPressed: _saveNewThought,
-      tooltip: AppConstants.saveTooltip,
-      child: const Icon(Icons.save),
-    );
-  }
-
-  Future<void> _saveNewThought() async {
-    final content = _textController.text.trim();
-    
-    if (Utils.isNotEmpty(content)) {
-      final thought = await _thoughtService.addThoughtAndSave(
-        content: content,
-        tag: _tagController.text,
-      );
-      
-      if (thought != null) {
-        setState(() {
-          _textController.clear();
-          _tagController.clear();
-        });
-        
-        _showSnackBar('${AppConstants.thoughtSaved}"${thought.tag}"标签！');
-      } else {
-        _showSnackBar(AppConstants.dataSaveFailed);
-      }
-    }
+    return _thoughtService.isEmpty
+        ? const EmptyState(
+            message: AppConstants.emptyStateMessage,
+            icon: Icons.lightbulb_outline,
+          )
+        : ListView(
+            children: _thoughtService.groupedThoughts.entries.map((entry) {
+              final tag = entry.key;
+              final thoughts = entry.value;
+              
+              return TagGroupCard(
+                tag: tag,
+                thoughts: thoughts,
+                onThoughtTap: _viewThought,
+                onThoughtEdit: _editThought,
+                onThoughtDelete: _deleteThought,
+                onTagDelete: () => _deleteTag(tag),
+                onTagEdit: _editTag,
+              );
+            }).toList(),
+          );
   }
 
   Future<void> _deleteThought(ThoughtItem thought) async {
