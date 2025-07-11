@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pencil/pages/add_thought_page.dart';
-import 'package:pencil/pages/home_page.dart';
+import 'package:pencil/pages/tag_list_page.dart';
 import '../services/thought_service.dart';
 
 /// 主屏幕 - 管理底部导航和页面切换
@@ -14,30 +14,30 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
   late final ThoughtService _thoughtService;
-  late final GlobalKey<HomePageState> _homePageKey;
+  late final GlobalKey<TagListPageState> _tagListPageKey;
 
   @override
   void initState() {
     super.initState();
     _thoughtService = ThoughtService();
-    _homePageKey = GlobalKey<HomePageState>();
+    _tagListPageKey = GlobalKey<TagListPageState>();
   }
 
   /// 获取页面列表
   List<Widget> get _pages => [
     AddThoughtPage(
       thoughtService: _thoughtService,
-      onThoughtAdded: _refreshHomePage,
+      onThoughtAdded: _refreshTagListPage,
     ),
-    HomePage(
-      key: _homePageKey,
+    TagListPage(
+      key: _tagListPageKey,
       thoughtService: _thoughtService,
     ),
   ];
 
-  /// 想法添加后刷新主页
-  void _refreshHomePage() {
-    _homePageKey.currentState?.refreshData();
+  /// 想法添加后刷新标签列表页
+  void _refreshTagListPage() {
+    _tagListPageKey.currentState?.refreshData();
   }
 
   /// 处理底部导航栏点击

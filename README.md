@@ -49,7 +49,7 @@ lib/
 │   ├── common_widgets.dart     # 通用组件
 │   └── thought_widgets.dart    # 想法相关组件
 └── pages/
-    ├── home_page.dart          # 主页面
+    ├── tag_list_page.dart      # 标签列表页面
     ├── edit_thought_page.dart  # 编辑页面
     └── view_thought_page.dart  # 浏览页面
 ```
@@ -75,7 +75,7 @@ lib/
 - `TagGroupCard`: 标签分组卡片
 
 #### 页面组件 (Pages)
-- `HomePage`: 主页面，包含想法输入和列表展示
+- `TagListPage`: 标签列表页面，展示所有标签和导航到详情
 - `EditThoughtPage`: 全屏编辑页面
 - `ViewThoughtPage`: 全屏浏览页面
 
