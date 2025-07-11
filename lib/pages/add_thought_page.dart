@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../constants/app_constants.dart';
 import '../services/thought_service.dart';
-import '../utils/utils.dart';
+import '../services/notification_service.dart';
+import '../utils/form_manager.dart';
 import '../widgets/common_widgets.dart';
+import '../widgets/input_widgets.dart';
 
 /// 新增想法页面
 class AddThoughtPage extends StatefulWidget {
@@ -23,27 +25,18 @@ class AddThoughtPage extends StatefulWidget {
 }
 
 class _AddThoughtPageState extends State<AddThoughtPage> {
-  late final TextEditingController _textController;
-  late final TextEditingController _tagController;
-  late final TextEditingController _titleController;
-  late final TextEditingController _authorController;
+  late final ThoughtFormManager _formManager;
 
   @override
   void initState() {
     super.initState();
-    _textController = TextEditingController();
-    _tagController = TextEditingController();
-    _titleController = TextEditingController();
-    _authorController = TextEditingController();
+    _formManager = ThoughtFormManager();
     _loadUsedTags();
   }
 
   @override
   void dispose() {
-    _textController.dispose();
-    _tagController.dispose();
-    _titleController.dispose();
-    _authorController.dispose();
+    _formManager.dispose();
     super.dispose();
   }
 
@@ -68,11 +61,11 @@ class _AddThoughtPageState extends State<AddThoughtPage> {
         child: Column(
           children: [
             const SizedBox(height: 20),
-            _buildTitleInput(),
+            TitleInputField(controller: _formManager.titleController),
             const SizedBox(height: 16),
-            _buildTextEditor(),
+            ContentInputField(controller: _formManager.contentController),
             const SizedBox(height: 16),
-            _buildAuthorInput(),
+            AuthorInputField(controller: _formManager.authorController),
             const SizedBox(height: 16),
             _buildTagInput(),
           ],
@@ -90,43 +83,6 @@ class _AddThoughtPageState extends State<AddThoughtPage> {
     );
   }
 
-  /// 构建标题输入框
-  Widget _buildTitleInput() {
-    return TextField(
-      controller: _titleController,
-      decoration: const InputDecoration(
-        labelText: '标题（可选）',
-        hintText: '为你的想法添加一个标题...',
-        prefixIcon: Icon(Icons.title),
-      ),
-    );
-  }
-
-  /// 构建作者输入框
-  Widget _buildAuthorInput() {
-    return TextField(
-      controller: _authorController,
-      decoration: const InputDecoration(
-        labelText: '作者/出处（可选）',
-        hintText: '记录想法的来源或作者...',
-        prefixIcon: Icon(Icons.person_outline),
-      ),
-    );
-  }
-
-  /// 构建文本编辑器
-  Widget _buildTextEditor() {
-    return TextField(
-      controller: _textController,
-      maxLines: AppConstants.maxTextFieldLines,
-      minLines: AppConstants.defaultTextFieldLines,
-      autofocus: true,
-      decoration: const InputDecoration(
-        hintText: AppConstants.thoughtHint,
-      ),
-    );
-  }
-
   /// 构建标签输入区域
   Widget _buildTagInput() {
     return StatefulBuilder(
@@ -134,7 +90,7 @@ class _AddThoughtPageState extends State<AddThoughtPage> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildTagTextField(),
+            TagInputField(controller: _formManager.tagController),
             if (_hasUsedTags) ...[
               const SizedBox(height: 8),
               _buildTagSelector(),
@@ -142,18 +98,6 @@ class _AddThoughtPageState extends State<AddThoughtPage> {
           ],
         );
       },
-    );
-  }
-
-  /// 构建标签文本字段
-  Widget _buildTagTextField() {
-    return TextField(
-      controller: _tagController,
-      decoration: const InputDecoration(
-        labelText: AppConstants.tagLabel,
-        hintText: AppConstants.tagHint,
-        prefixIcon: Icon(Icons.tag),
-      ),
     );
   }
 
@@ -170,58 +114,37 @@ class _AddThoughtPageState extends State<AddThoughtPage> {
 
   /// 标签选择回调
   void _onTagSelected(String tag) {
-    _tagController.text = tag;
+    _formManager.tagController.text = tag;
   }
 
   /// 保存新想法
   Future<void> _saveNewThought() async {
-    final content = _textController.text.trim();
+    final validationResult = _formManager.validate();
     
-    if (!Utils.isNotEmpty(content)) return;
+    if (!validationResult.isValid) {
+      if (validationResult.errorMessage != null) {
+        NotificationService.showError(context, validationResult.errorMessage!);
+      }
+      return;
+    }
 
-    final thought = await widget.thoughtService.addThoughtAndSave(
-      content: content,
-      tag: _tagController.text,
-      title: _titleController.text.trim().isEmpty ? null : _titleController.text.trim(),
-      author: _authorController.text.trim().isEmpty ? null : _authorController.text.trim(),
-    );
+    final thought = await _formManager.createThought(widget.thoughtService);
+    
+    if (!mounted) return;
     
     if (thought != null) {
       _clearInputs();
-      _showSuccessMessage(thought.tag);
+      NotificationService.showThoughtSaved(context, thought.tag);
       widget.onThoughtAdded?.call();
     } else {
-      _showErrorMessage();
+      NotificationService.showDataSaveFailed(context);
     }
   }
 
   /// 清空输入框
   void _clearInputs() {
     setState(() {
-      _textController.clear();
-      _tagController.clear();
-      _titleController.clear();
-      _authorController.clear();
+      _formManager.clearAll();
     });
-  }
-
-  /// 显示成功消息
-  void _showSuccessMessage(String tag) {
-    _showSnackBar('${AppConstants.thoughtSaved}"$tag"标签！');
-  }
-
-  /// 显示错误消息
-  void _showErrorMessage() {
-    _showSnackBar(AppConstants.dataSaveFailed);
-  }
-
-  /// 显示提示消息
-  void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: AppConstants.snackBarDuration,
-      ),
-    );
   }
 }

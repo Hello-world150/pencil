@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import '../constants/app_constants.dart';
 import '../models/thought_item.dart';
 import '../services/thought_service.dart';
-import '../widgets/common_widgets.dart';
+import '../services/notification_service.dart';
+import '../utils/form_manager.dart';
 import '../utils/utils.dart';
+import '../widgets/input_widgets.dart';
+import '../widgets/common_widgets.dart';
 
 /// 想法编辑页面 - 提供全屏编辑和实时保存功能
 class EditThoughtPage extends StatefulWidget {
@@ -32,54 +35,25 @@ class EditThoughtPage extends StatefulWidget {
 }
 
 class _EditThoughtPageState extends State<EditThoughtPage> {
-  late final TextEditingController _contentController;
-  late final TextEditingController _tagController;
-  late final TextEditingController _titleController;
-  late final TextEditingController _authorController;
+  late final ThoughtFormManager _formManager;
   bool _hasUnsavedChanges = false;
 
   @override
   void initState() {
     super.initState();
-    _initializeControllers();
+    _formManager = ThoughtFormManager.fromThought(widget.thought);
+    _formManager.addListeners(_onTextChanged);
   }
 
   @override
   void dispose() {
-    _disposeControllers();
+    _formManager.removeListeners(_onTextChanged);
+    _formManager.dispose();
     super.dispose();
   }
 
-  /// 初始化文本控制器
-  void _initializeControllers() {
-    _contentController = TextEditingController(text: widget.thought.content);
-    _tagController = TextEditingController(text: widget.thought.tag);
-    _titleController = TextEditingController(text: widget.thought.title ?? '');
-    _authorController = TextEditingController(text: widget.thought.author ?? '');
-    
-    _contentController.addListener(_onTextChanged);
-    _tagController.addListener(_onTextChanged);
-    _titleController.addListener(_onTextChanged);
-    _authorController.addListener(_onTextChanged);
-  }
-
-  /// 清理文本控制器
-  void _disposeControllers() {
-    _contentController.removeListener(_onTextChanged);
-    _tagController.removeListener(_onTextChanged);
-    _titleController.removeListener(_onTextChanged);
-    _authorController.removeListener(_onTextChanged);
-    _contentController.dispose();
-    _tagController.dispose();
-    _titleController.dispose();
-    _authorController.dispose();
-  }
-
   void _onTextChanged() {
-    final hasChanges = _contentController.text != widget.thought.content ||
-                      _tagController.text != widget.thought.tag ||
-                      _titleController.text != (widget.thought.title ?? '') ||
-                      _authorController.text != (widget.thought.author ?? '');
+    final hasChanges = _formManager.hasChanges(widget.thought);
     
     if (hasChanges != _hasUnsavedChanges) {
       setState(() {
@@ -89,32 +63,24 @@ class _EditThoughtPageState extends State<EditThoughtPage> {
   }
 
   Future<void> _saveChanges() async {
-    final newContent = _contentController.text.trim();
-    final newTag = Utils.safeString(_tagController.text, AppConstants.defaultTag);
-    final newTitle = _titleController.text.trim().isEmpty ? null : _titleController.text.trim();
-    final newAuthor = _authorController.text.trim().isEmpty ? null : _authorController.text.trim();
+    final validationResult = _formManager.validate();
     
-    if (Utils.isNotEmpty(newContent)) {
-      final updatedThought = widget.thought.copyWith(
-        content: newContent,
-        tag: newTag,
-        title: newTitle,
-        author: newAuthor,
-      );
-      
-      final success = await widget.onSave(updatedThought);
-      if (success && mounted) {
-        Navigator.of(context).pop();
-      } else {
-        // 保存失败，显示错误信息
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(AppConstants.dataSaveFailed),
-              duration: AppConstants.snackBarDuration,
-            ),
-          );
-        }
+    if (!validationResult.isValid) {
+      if (validationResult.errorMessage != null) {
+        NotificationService.showError(context, validationResult.errorMessage!);
+      }
+      return;
+    }
+
+    final updatedThought = _formManager.updateThought(widget.thought);
+    final success = await widget.onSave(updatedThought);
+    
+    if (success && mounted) {
+      Navigator.of(context).pop();
+    } else {
+      // 保存失败，显示错误信息
+      if (mounted) {
+        NotificationService.showDataSaveFailed(context);
       }
     }
   }
@@ -122,26 +88,7 @@ class _EditThoughtPageState extends State<EditThoughtPage> {
   Future<bool> _onWillPop() async {
     if (!_hasUnsavedChanges) return true;
     
-    bool? result = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('放弃更改？'),
-        content: const Text('您有未保存的更改，确定要离开吗？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(AppConstants.cancelButton),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('放弃'),
-          ),
-        ],
-      ),
-    );
-    
-    return result ?? false;
+    return await DialogService.showDiscardChangesDialog(context);
   }
 
   @override
@@ -193,27 +140,11 @@ class _EditThoughtPageState extends State<EditThoughtPage> {
   }
 
   Widget _buildTitleEditor() {
-    return TextField(
-      controller: _titleController,
-      decoration: const InputDecoration(
-        labelText: '标题（可选）',
-        hintText: '为你的想法添加一个标题...',
-        prefixIcon: Icon(Icons.title),
-        border: OutlineInputBorder(),
-      ),
-    );
+    return TitleInputField(controller: _formManager.titleController);
   }
 
   Widget _buildAuthorEditor() {
-    return TextField(
-      controller: _authorController,
-      decoration: const InputDecoration(
-        labelText: '作者/出处（可选）',
-        hintText: '记录想法的来源或作者...',
-        prefixIcon: Icon(Icons.person_outline),
-        border: OutlineInputBorder(),
-      ),
-    );
+    return AuthorInputField(controller: _formManager.authorController);
   }
 
   Widget _buildContentEditor() {
@@ -222,7 +153,7 @@ class _EditThoughtPageState extends State<EditThoughtPage> {
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: TextField(
-            controller: _contentController,
+            controller: _formManager.contentController,
             maxLines: null,
             expands: true,
             textAlignVertical: TextAlignVertical.top,
@@ -248,7 +179,7 @@ class _EditThoughtPageState extends State<EditThoughtPage> {
             ),
             const SizedBox(height: 12),
             TextField(
-              controller: _tagController,
+              controller: _formManager.tagController,
               decoration: const InputDecoration(
                 hintText: '为你的想法添加标签...',
                 prefixIcon: Icon(Icons.tag),
@@ -265,10 +196,10 @@ class _EditThoughtPageState extends State<EditThoughtPage> {
               const SizedBox(height: 8),
               TagFilter(
                 availableTags: widget.usedTags,
-                selectedTag: _tagController.text,
+                selectedTag: _formManager.tagController.text,
                 onTagChanged: (tag) {
                   setState(() {
-                    _tagController.text = tag ?? '';
+                    _formManager.tagController.text = tag ?? '';
                   });
                 },
               ),
