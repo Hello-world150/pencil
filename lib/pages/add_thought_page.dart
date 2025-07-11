@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../constants/app_constants.dart';
 import '../services/thought_service.dart';
-import '../services/notification_service.dart';
 import '../utils/form_manager.dart';
 import '../widgets/common_widgets.dart';
 import '../widgets/input_widgets.dart';
@@ -123,7 +122,9 @@ class _AddThoughtPageState extends State<AddThoughtPage> {
     
     if (!validationResult.isValid) {
       if (validationResult.errorMessage != null) {
-        NotificationService.showError(context, validationResult.errorMessage!);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(validationResult.errorMessage!)),
+        );
       }
       return;
     }
@@ -134,10 +135,14 @@ class _AddThoughtPageState extends State<AddThoughtPage> {
     
     if (thought != null) {
       _clearInputs();
-      NotificationService.showThoughtSaved(context, thought.tag);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${AppConstants.thoughtSaved}"${thought.tag}"标签！')),
+      );
       widget.onThoughtAdded?.call();
     } else {
-      NotificationService.showDataSaveFailed(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppConstants.dataSaveFailed)),
+      );
     }
   }
 

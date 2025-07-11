@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../constants/app_constants.dart';
 import '../models/thought_item.dart';
 import '../services/thought_service.dart';
-import '../services/notification_service.dart';
+import '../services/dialog_service.dart';
 import '../utils/form_manager.dart';
 import '../utils/utils.dart';
 import '../widgets/input_widgets.dart';
@@ -67,7 +67,9 @@ class _EditThoughtPageState extends State<EditThoughtPage> {
     
     if (!validationResult.isValid) {
       if (validationResult.errorMessage != null) {
-        NotificationService.showError(context, validationResult.errorMessage!);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(validationResult.errorMessage!)),
+        );
       }
       return;
     }
@@ -80,7 +82,9 @@ class _EditThoughtPageState extends State<EditThoughtPage> {
     } else {
       // 保存失败，显示错误信息
       if (mounted) {
-        NotificationService.showDataSaveFailed(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppConstants.dataSaveFailed)),
+        );
       }
     }
   }
