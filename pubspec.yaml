@@ -26,8 +26,9 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
-  # 自定义字体
+  # 自定义字体 - 思源宋体
   fonts:
-    - family: ZhuqueFangsong
+    - family: Source Han Serif SC
       fonts:
-        - asset: fonts/ZhuqueFangsong-Regular.ttf
+        - asset: fonts/SourceHanSerifSC-Regular.otf
+          weight: 400

@@ -13,8 +13,8 @@ class AppConstants {
   /// 默认标签名称
   static const String defaultTag = '想法';
   
-  /// 默认字体族
-  static const String fontFamily = 'ZhuqueFangsong';
+  /// 默认字体族 - 思源宋体
+  static const String fontFamily = 'Source Han Serif SC';
   
   /// 本地存储键名
   static const String storageKey = 'pencil_thoughts';
